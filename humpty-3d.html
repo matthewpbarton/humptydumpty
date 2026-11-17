@@ -1,0 +1,2276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Humpty Dumpty's 3D Royal Egg Hospital & Engineering Lab</title>
+  <style>
+    :root {
+      --bg-warm: #fff8ee;
+      --panel-bg: rgba(255, 250, 242, 0.92);
+      --panel-border: #f0d7b8;
+      --ink: #3d2c1e;
+      --ink-soft: #6f5540;
+      --gold: #f59e0b;
+      --gold-dark: #d97706;
+      --mint: #10b981;
+      --mint-dark: #059669;
+      --sky: #0ea5e9;
+      --rose: #f43f5e;
+      --shadow: 0 10px 30px rgba(61, 44, 30, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: "Nunito", "Quicksand", "Fredoka", "Rounded Mplus 1c", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 50% 35%, #fff6e8 0%, #f3dfc4 100%);
+      color: var(--ink);
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+    /* Top Header & Jump to Act Bar */
+    .top-bar {
+      position: fixed;
+      top: 12px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      pointer-events: none;
+      z-index: 20;
+      flex-wrap: wrap;
+    }
+
+    .title-pill {
+      pointer-events: auto;
+      background: var(--panel-bg);
+      border: 2px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 8px 16px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .title-pill .logo-egg {
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .title-pill h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+
+    .title-pill .subtitle {
+      font-size: 12px;
+      color: var(--ink-soft);
+      font-weight: 700;
+    }
+
+    .act-jump-bar {
+      pointer-events: auto;
+      background: var(--panel-bg);
+      border: 2px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 5px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .act-btn {
+      border: none;
+      background: transparent;
+      color: var(--ink-soft);
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 12px;
+      padding: 7px 11px;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .act-btn:hover {
+      background: rgba(245, 158, 11, 0.14);
+      color: var(--ink);
+    }
+
+    .act-btn.active {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(245, 158, 11, 0.35);
+    }
+
+    /* Nurse Pip Dialogue Bubble */
+    .nurse-pip-box {
+      position: fixed;
+      top: 76px;
+      left: 16px;
+      max-width: 370px;
+      background: var(--panel-bg);
+      border: 2.5px solid #f7c98e;
+      border-radius: 22px;
+      padding: 12px 16px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      z-index: 18;
+      pointer-events: auto;
+      transition: transform 0.25s ease, border-color 0.25s ease;
+    }
+
+    .nurse-pip-box.alert {
+      border-color: var(--rose);
+      animation: gentleShake 0.4s ease;
+    }
+
+    @keyframes gentleShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    .pip-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fde68a, #fca5a5);
+      border: 2.5px solid #fff;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+
+    .pip-content {
+      flex: 1;
+    }
+
+    .pip-name {
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #c2410c;
+      margin-bottom: 2px;
+    }
+
+    .pip-text {
+      font-size: 14px;
+      line-height: 1.38;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    /* Camera Rotate Control (Left Bottom) */
+    .camera-control {
+      position: fixed;
+      bottom: 18px;
+      left: 16px;
+      background: var(--panel-bg);
+      border: 2px solid var(--panel-border);
+      border-radius: 18px;
+      padding: 10px 14px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      z-index: 18;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 190px;
+    }
+
+    .camera-control label {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--ink-soft);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .camera-control input[type="range"] {
+      width: 100%;
+      accent-color: var(--gold);
+      cursor: pointer;
+    }
+
+    .sound-toggle {
+      position: fixed;
+      top: 76px;
+      right: 16px;
+      background: var(--panel-bg);
+      border: 2px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--ink);
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      z-index: 18;
+    }
+
+    /* Bottom Action Dock */
+    .bottom-dock {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--panel-bg);
+      border: 2.5px solid var(--panel-border);
+      border-radius: 26px;
+      padding: 12px 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: calc(100vw - 430px);
+      min-width: 300px;
+    }
+
+    .btn-primary {
+      border: none;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: #fff;
+      font-family: inherit;
+      font-weight: 900;
+      font-size: 15px;
+      padding: 11px 20px;
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.38);
+      transition: transform 0.14s ease, box-shadow 0.14s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(245, 158, 11, 0.45);
+    }
+
+    .btn-primary:active {
+      transform: translateY(1px);
+    }
+
+    .btn-primary.mint {
+      background: linear-gradient(135deg, #34d399, #10b981);
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    }
+
+    .btn-primary.sky {
+      background: linear-gradient(135deg, #38bdf8, #0284c7);
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35);
+    }
+
+    .btn-secondary {
+      border: 2px solid var(--panel-border);
+      background: #fff;
+      color: var(--ink);
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 14px;
+      padding: 9px 14px;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: all 0.14s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-secondary:hover {
+      background: #fff4e2;
+      border-color: var(--gold);
+    }
+
+    .btn-secondary.selected {
+      background: #fef3c7;
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.22);
+    }
+
+    .btn-secondary.done {
+      background: #d1fae5;
+      border-color: var(--mint);
+      color: #065f46;
+    }
+
+    .swatch-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.7);
+      padding: 6px 10px;
+      border-radius: 14px;
+      border: 1.5px solid var(--panel-border);
+    }
+
+    .swatch-label {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--ink-soft);
+      margin-right: 2px;
+    }
+
+    .swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2.5px solid #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.18);
+      cursor: pointer;
+      transition: transform 0.14s ease;
+    }
+
+    .swatch:hover { transform: scale(1.15); }
+    .swatch.active { outline: 2.5px solid var(--ink); }
+
+    .progress-pill {
+      font-size: 13px;
+      font-weight: 900;
+      color: var(--ink);
+      background: #fef3c7;
+      padding: 7px 12px;
+      border-radius: 12px;
+      border: 1.5px solid #fcd34d;
+    }
+
+    /* Certificate Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(45, 30, 15, 0.55);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .certificate-card {
+      background: linear-gradient(160deg, #fffdf9, #fff3dc);
+      border: 6px solid #f59e0b;
+      border-radius: 28px;
+      padding: 28px 34px;
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+      position: relative;
+    }
+
+    .cert-badge {
+      font-size: 62px;
+      margin-bottom: 6px;
+    }
+
+    .cert-title {
+      font-size: 26px;
+      font-weight: 900;
+      color: #b45309;
+      margin: 4px 0 8px;
+    }
+
+    .cert-subtitle {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    .cert-name-input {
+      font-family: inherit;
+      font-size: 18px;
+      font-weight: 800;
+      text-align: center;
+      padding: 8px 14px;
+      border-radius: 14px;
+      border: 2px solid #f59e0b;
+      background: #fff;
+      color: var(--ink);
+      width: 80%;
+      margin-bottom: 18px;
+    }
+
+    @media (max-width: 900px) {
+      .bottom-dock {
+        max-width: calc(100vw - 24px);
+        bottom: 76px;
+      }
+      .camera-control {
+        bottom: 12px;
+        left: 12px;
+        width: 165px;
+        padding: 7px 10px;
+      }
+      .nurse-pip-box {
+        max-width: 280px;
+        top: 120px;
+      }
+    }
+
+    @media print {
+      .top-bar, .nurse-pip-box, .camera-control, .bottom-dock, .sound-toggle, .no-print {
+        display: none !important;
+      }
+      .modal-backdrop {
+        position: static;
+        background: none;
+        display: flex !important;
+      }
+      .certificate-card {
+        box-shadow: none;
+      }
+    }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="title-pill">
+      <div class="logo-egg">🥚</div>
+      <div>
+        <h1>Humpty Dumpty's 3D Royal Egg Hospital</h1>
+        <div class="subtitle" id="act-subtitle">Act 1: The Great 3D Fall</div>
+      </div>
+    </div>
+
+    <div class="act-jump-bar" id="act-jump-bar" aria-label="Jump to Act">
+      <button class="act-btn active" data-act="1">1. Fall</button>
+      <button class="act-btn" data-act="2">2. Hollow Bowl</button>
+      <button class="act-btn" data-act="3">3. Syringe</button>
+      <button class="act-btn" data-act="4">4. 3D Hospital</button>
+      <button class="act-btn" data-act="5">5. Safe Wall</button>
+    </div>
+  </div>
+
+  <button class="sound-toggle" id="sound-toggle">🔊 Sound: ON</button>
+
+  <!-- Nurse Pip Speech Bubble -->
+  <div class="nurse-pip-box" id="nurse-pip-box">
+    <div class="pip-avatar">🩺</div>
+    <div class="pip-content">
+      <div class="pip-name">Nurse Pip</div>
+      <div class="pip-text" id="pip-text">
+        Welcome to the Royal Egg Hospital! Pick Humpty's bowtie and hat color, then watch him on the wall!
+      </div>
+    </div>
+  </div>
+
+  <!-- Camera Rotate Control -->
+  <div class="camera-control">
+    <label>
+      <span>🎥 Rotate View</span>
+      <span id="orbit-deg">0°</span>
+    </label>
+    <input type="range" id="orbit-slider" min="-75" max="75" value="0" />
+  </div>
+
+  <!-- Bottom Dynamic Action Dock -->
+  <div class="bottom-dock" id="bottom-dock"></div>
+
+  <!-- Junior 3D Egg Engineer Badge Modal -->
+  <div class="modal-backdrop" id="cert-modal">
+    <div class="certificate-card">
+      <div class="cert-badge">🏅🥚✨</div>
+      <div class="cert-title">Junior 3D Egg Engineer!</div>
+      <div class="cert-subtitle">
+        Awarded for solving the hollow 3D bowl geometry puzzle, rescuing Humpty's wobbly golden yolk, sealing his shell in the Royal Egg Hospital, and engineering a super-safe 3D wall!
+      </div>
+      <input type="text" class="cert-name-input" id="cert-name" value="Super Engineer" aria-label="Engineer Name" />
+      <div style="display:flex; gap:10px; justify-content:center;" class="no-print">
+        <button class="btn-primary mint" id="btn-print-cert">🖨️ Print Badge</button>
+        <button class="btn-secondary" id="btn-close-cert">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+    // =========================================================================
+    // 1. WEB AUDIO API SYNTHESIZED 3D FOLEY ENGINE
+    // =========================================================================
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+        this.uvOsc = null;
+        this.uvGain = null;
+      }
+
+      unlock() {
+        if (!this.enabled) return;
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume().catch(() => {});
+        }
+      }
+
+      playClink(pitchMult = 1.0) {
+        if (!this.enabled) return;
+        this.unlock();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const freqs = [1780 * pitchMult, 2680 * pitchMult];
+        freqs.forEach((f, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f, now);
+          osc.frequency.exponentialRampToValueAtTime(f * 0.92, now + 0.14);
+          gain.gain.setValueAtTime(idx === 0 ? 0.18 : 0.09, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+          osc.connect(gain).connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.16);
+        });
+      }
+
+      playGentleError() {
+        if (!this.enabled) return;
+        this.unlock();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        [330, 262].forEach((f, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now + i * 0.12);
+          gain.gain.setValueAtTime(0.14, now + i * 0.12);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.14);
+          osc.connect(gain).connect(this.ctx.destination);
+          osc.start(now + i * 0.12);
+          osc.stop(now + i * 0.12 + 0.15);
+        });
+      }
+
+      playSplit() {
+        if (!this.enabled) return;
+        this.unlock();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        // Soft crack + gentle splat
+        [900, 1450, 2100].forEach((f, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now + i * 0.03);
+          osc.frequency.exponentialRampToValueAtTime(f * 0.5, now + i * 0.03 + 0.08);
+          gain.gain.setValueAtTime(0.14, now + i * 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.03 + 0.09);
+          osc.connect(gain).connect(this.ctx.destination);
+          osc.start(now + i * 0.03);
+          osc.stop(now + i * 0.03 + 0.1);
+        });
+      }
+
+      playSuction(isSquirt = false) {
+        if (!this.enabled) return;
+        this.unlock();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        if (!isSquirt) {
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.exponentialRampToValueAtTime(580, now + 0.35);
+        } else {
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(190, now + 0.35);
+        }
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.4);
+      }
+
+      playBrush() {
+        if (!this.enabled) return;
+        this.unlock();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const bufferSize = this.ctx.sampleRate * 0.12;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.35;
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1400, now);
+        filter.Q.setValueAtTime(1.5, now);
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        noise.connect(filter).connect(gain).connect(this.ctx.destination);
+        noise.start(now);
+      }
+
+      setUVHum(active) {
+        if (!this.enabled || !this.ctx) return;
+        if (active && !this.uvOsc) {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = 185;
+          gain.gain.value = 0.05;
+          osc.connect(gain).connect(this.ctx.destination);
+          osc.start();
+          this.uvOsc = osc;
+          this.uvGain = gain;
+        } else if (!active && this.uvOsc) {
+          try {
+            this.uvOsc.stop();
+            this.uvOsc.disconnect();
+          } catch {}
+          this.uvOsc = null;
+          this.uvGain = null;
+        }
+      }
+
+      playXRayPing() {
+        if (!this.enabled) return;
+        this.unlock();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1240, now);
+        osc.frequency.exponentialRampToValueAtTime(1580, now + 0.18);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.26);
+      }
+
+      playBounce() {
+        if (!this.enabled) return;
+        this.unlock();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(340, now + 0.16);
+        osc.frequency.exponentialRampToValueAtTime(210, now + 0.3);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.33);
+      }
+
+      playFanfare() {
+        if (!this.enabled) return;
+        this.unlock();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((f, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          const t = now + idx * 0.1;
+          osc.frequency.setValueAtTime(f, t);
+          gain.gain.setValueAtTime(0.16, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+          osc.connect(gain).connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.36);
+        });
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    // =========================================================================
+    // 2. THREE.JS SCENE, RENDERER, STUDIO LIGHTING & PROCEDURAL TEXTURES
+    // =========================================================================
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf7ead9);
+    scene.fog = new THREE.Fog(0xf7ead9, 16, 36);
+
+    const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 80);
+    camera.position.set(0, 4.5, 9.5);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    container.appendChild(renderer.domElement);
+
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+    // Three-point warm studio lighting
+    const hemiLight = new THREE.HemisphereLight(0xfffaf0, 0xd8c3a5, 0.65);
+    scene.add(hemiLight);
+
+    const keyLight = new THREE.DirectionalLight(0xfff1d6, 1.85);
+    keyLight.position.set(5.5, 9.5, 6.5);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 2048;
+    keyLight.shadow.mapSize.height = 2048;
+    keyLight.shadow.camera.near = 1;
+    keyLight.shadow.camera.far = 26;
+    const d = 7.5;
+    keyLight.shadow.camera.left = -d;
+    keyLight.shadow.camera.right = d;
+    keyLight.shadow.camera.top = d;
+    keyLight.shadow.camera.bottom = -d;
+    keyLight.shadow.bias = -0.0005;
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0xdbeafe, 0.65);
+    fillLight.position.set(-6, 5, 4);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0xfef3c7, 0.8);
+    rimLight.position.set(0, 6, -7);
+    scene.add(rimLight);
+
+    // Procedural Wood Texture
+    function createWoodTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#c89b6e';
+      ctx.fillRect(0, 0, 512, 512);
+      for (let i = 0; i < 120; i++) {
+        ctx.strokeStyle = i % 2 === 0 ? 'rgba(139, 90, 43, 0.14)' : 'rgba(240, 200, 155, 0.12)';
+        ctx.lineWidth = 2 + Math.random() * 6;
+        ctx.beginPath();
+        const y = Math.random() * 512;
+        ctx.moveTo(0, y);
+        ctx.bezierCurveTo(170, y + (Math.random() - 0.5) * 20, 340, y + (Math.random() - 0.5) * 20, 512, y);
+        ctx.stroke();
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(2, 2);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    // Procedural Speckled Eggshell Texture
+    function createEggshellTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 512;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 0, 512);
+      grad.addColorStop(0, '#fff7eb');
+      grad.addColorStop(0.5, '#f6e7d2');
+      grad.addColorStop(1, '#edd8bd');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 512);
+      for (let i = 0; i < 650; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const r = 0.5 + Math.random() * 2.1;
+        ctx.fillStyle = Math.random() > 0.35 ? 'rgba(182, 137, 94, 0.22)' : 'rgba(255, 255, 255, 0.35)';
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    // Procedural Brick Texture
+    function createBrickTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#e5dcd0';
+      ctx.fillRect(0, 0, 512, 512);
+      const rows = 8, cols = 4;
+      const bw = 512 / cols, bh = 512 / rows;
+      for (let r = 0; r < rows; r++) {
+        const offset = (r % 2) * (bw / 2);
+        for (let col = -1; col <= cols; col++) {
+          const shade = 190 + Math.floor(Math.random() * 30);
+          ctx.fillStyle = `rgb(${shade}, ${Math.floor(shade * 0.54)}, ${Math.floor(shade * 0.42)})`;
+          ctx.fillRect(col * bw + offset + 4, r * bh + 4, bw - 8, bh - 8);
+        }
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    const woodTex = createWoodTexture();
+    const shellTex = createEggshellTexture();
+    const brickTex = createBrickTexture();
+
+    // Shared Materials
+    const outerShellMat = new THREE.MeshPhysicalMaterial({
+      map: shellTex,
+      roughness: 0.36,
+      metalness: 0.0,
+      clearcoat: 0.18,
+      clearcoatRoughness: 0.32,
+      sheen: 0.25,
+      sheenColor: new THREE.Color(0xfff5e4),
+    });
+
+    const innerShellMat = new THREE.MeshStandardMaterial({
+      color: 0xfbf5ec,
+      roughness: 0.78,
+      metalness: 0.0,
+    });
+
+    const xrayShellMat = new THREE.MeshPhysicalMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.35,
+      transparent: true,
+      opacity: 0.28,
+      roughness: 0.1,
+      wireframe: false,
+      depthWrite: false,
+    });
+
+    const xrayWireMat = new THREE.MeshBasicMaterial({
+      color: 0x7dd3fc,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.45,
+    });
+
+    // Warm Wooden Examination Table
+    const tableGeo = new THREE.CylinderGeometry(7.2, 7.5, 0.6, 48);
+    const tableMat = new THREE.MeshStandardMaterial({ map: woodTex, roughness: 0.55 });
+    const tableMesh = new THREE.Mesh(tableGeo, tableMat);
+    tableMesh.position.y = -0.3;
+    tableMesh.receiveShadow = true;
+    scene.add(tableMesh);
+
+    // =========================================================================
+    // 3. PROCEDURAL 3D HOLLOW EGGSHELL SHARD GEOMETRY (8 CURVED PIECES)
+    // =========================================================================
+    // Egg parametric formula: phi in [0, PI] (0=bottom, PI=top), theta in [0, 2PI]
+    function eggPoint(phi, theta, radiusScale = 1.0) {
+      const R0 = 1.05 * radiusScale;
+      const H = 1.38 * radiusScale;
+      // Slightly wider bottom, tapered top
+      const taper = 1.0 + 0.15 * Math.cos(phi);
+      const r = R0 * taper * Math.sin(phi);
+      const x = r * Math.cos(theta);
+      const z = r * Math.sin(theta);
+      const y = -H * Math.cos(phi) + H; // bottom at y=0, top at y=2*H (~2.76)
+      return new THREE.Vector3(x, y, z);
+    }
+
+    /**
+     * Builds a real 3D curved eggshell shard with wall thickness (outer + inner + rim walls).
+     * Material groups: 0 = outer speckled shell, 1 = inner matte membrane.
+     */
+    function createEggShardGeometry(phiMin, phiMax, thetaMin, thetaMax, thickness = 0.065) {
+      const segPhi = 14;
+      const segTheta = 16;
+      const positions = [];
+      const uvs = [];
+      const outerIndices = [];
+      const innerIndices = [];
+
+      const gridOuter = [];
+      const gridInner = [];
+
+      const addVertex = (v, u, vCoord) => {
+        const idx = positions.length / 3;
+        positions.push(v.x, v.y, v.z);
+        uvs.push(u, vCoord);
+        return idx;
+      };
+
+      for (let i = 0; i <= segPhi; i++) {
+        const uPhi = i / segPhi;
+        const phi = phiMin + (phiMax - phiMin) * uPhi;
+        const rowO = [];
+        const rowI = [];
+        for (let j = 0; j <= segTheta; j++) {
+          const uTheta = j / segTheta;
+          // Subtle organic fracture wobble along interior edges
+          let wobble = 0;
+          if ((i === 0 && phiMin > 0.05) || (i === segPhi && phiMax < Math.PI - 0.05)) {
+            wobble = Math.sin(uTheta * Math.PI * 3) * 0.025;
+          }
+          const pPhi = Math.max(0.001, Math.min(Math.PI - 0.001, phi + wobble));
+          const theta = thetaMin + (thetaMax - thetaMin) * uTheta;
+
+          const pOut = eggPoint(pPhi, theta, 1.0);
+          const pIn = eggPoint(pPhi, theta, 1.0 - thickness);
+
+          rowO.push(addVertex(pOut, theta / (Math.PI * 2), pPhi / Math.PI));
+          rowI.push(addVertex(pIn, theta / (Math.PI * 2), pPhi / Math.PI));
+        }
+        gridOuter.push(rowO);
+        gridInner.push(rowI);
+      }
+
+      // Outer & inner faces
+      for (let i = 0; i < segPhi; i++) {
+        for (let j = 0; j < segTheta; j++) {
+          const o00 = gridOuter[i][j], o10 = gridOuter[i + 1][j];
+          const o01 = gridOuter[i][j + 1], o11 = gridOuter[i + 1][j + 1];
+          outerIndices.push(o00, o01, o11, o00, o11, o10);
+
+          const i00 = gridInner[i][j], i10 = gridInner[i + 1][j];
+          const i01 = gridInner[i][j + 1], i11 = gridInner[i + 1][j + 1];
+          innerIndices.push(i00, i11, i01, i00, i10, i11);
+        }
+      }
+
+      // Stitch rim edges (placed in innerIndices so rim looks clean matte)
+      const stitchEdge = (arrO, arrI, reverse = false) => {
+        for (let k = 0; k < arrO.length - 1; k++) {
+          const a = arrO[k], b = arrO[k + 1], c = arrI[k + 1], d = arrI[k];
+          if (!reverse) innerIndices.push(a, b, c, a, c, d);
+          else innerIndices.push(a, c, b, a, d, c);
+        }
+      };
+
+      // Top & bottom phi edges
+      if (phiMin > 0.02) stitchEdge(gridOuter[0], gridInner[0], true);
+      if (phiMax < Math.PI - 0.02) stitchEdge(gridOuter[segPhi], gridInner[segPhi], false);
+      // Left & right theta edges
+      const leftO = gridOuter.map(r => r[0]), leftI = gridInner.map(r => r[0]);
+      const rightO = gridOuter.map(r => r[segTheta]), rightI = gridInner.map(r => r[segTheta]);
+      stitchEdge(leftO, leftI, false);
+      stitchEdge(rightO, rightI, true);
+
+      const geom = new THREE.BufferGeometry();
+      const allIndices = [...outerIndices, ...innerIndices];
+      geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+      geom.setIndex(allIndices);
+      geom.addGroup(0, outerIndices.length, 0);
+      geom.addGroup(outerIndices.length, innerIndices.length, 1);
+      geom.computeVertexNormals();
+      return geom;
+    }
+
+    // Center a shard's geometry around its local centroid so rotating/dragging feels natural!
+    function createCenteredShard(phiMin, phiMax, thetaMin, thetaMax) {
+      const geom = createEggShardGeometry(phiMin, phiMax, thetaMin, thetaMax);
+      geom.computeBoundingBox();
+      const center = new THREE.Vector3();
+      geom.boundingBox.getCenter(center);
+      geom.translate(-center.x, -center.y, -center.z);
+      return { geom, targetLocalPos: center };
+    }
+
+    // =========================================================================
+    // 4. SHARED GAME OBJECTS (RING, LEAF, MOSS, HUMPTY, SHARDS, YOLK, TOOLS)
+    // =========================================================================
+    const eggAssemblyGroup = new THREE.Group();
+    eggAssemblyGroup.position.set(0, 0.16, 0);
+    scene.add(eggAssemblyGroup);
+
+    // Royal Padded Velvet Examination Ring (holds the hollow bottom bowl)
+    const ringGeo = new THREE.TorusGeometry(0.88, 0.14, 20, 48);
+    ringGeo.rotateX(Math.PI / 2);
+    const ringMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.65 });
+    const examRing = new THREE.Mesh(ringGeo, ringMat);
+    examRing.position.set(0, 0.14, 0);
+    examRing.castShadow = true;
+    examRing.receiveShadow = true;
+    scene.add(examRing);
+
+    const goldTrimGeo = new THREE.TorusGeometry(1.01, 0.035, 12, 48);
+    goldTrimGeo.rotateX(Math.PI / 2);
+    const goldTrimMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.25, metalness: 0.85 });
+    const goldTrim = new THREE.Mesh(goldTrimGeo, goldTrimMat);
+    goldTrim.position.set(0, 0.12, 0);
+    scene.add(goldTrim);
+
+    // Broad Green Leaf (for Yolk puddle in Act 1-3)
+    const leafGroup = new THREE.Group();
+    leafGroup.position.set(-2.7, 0.03, 0.7);
+    const leafShape = new THREE.Shape();
+    leafShape.moveTo(0, -1.2);
+    leafShape.bezierCurveTo(1.1, -0.9, 1.25, 0.5, 0, 1.35);
+    leafShape.bezierCurveTo(-1.25, 0.5, -1.1, -0.9, 0, -1.2);
+    const leafGeo = new THREE.ExtrudeGeometry(leafShape, { depth: 0.04, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02 });
+    leafGeo.rotateX(-Math.PI / 2);
+    const leafMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.55 });
+    const leafMesh = new THREE.Mesh(leafGeo, leafMat);
+    leafMesh.receiveShadow = true;
+    leafMesh.castShadow = true;
+    leafGroup.add(leafMesh);
+    scene.add(leafGroup);
+
+    // Soft Green Moss Cushion (Act 1 landing)
+    const mossGroup = new THREE.Group();
+    mossGroup.position.set(0, 0.02, 1.8);
+    const mossGeo = new THREE.CylinderGeometry(1.4, 1.55, 0.24, 32);
+    const mossMat = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.9 });
+    const mossMesh = new THREE.Mesh(mossGeo, mossMat);
+    mossMesh.receiveShadow = true;
+    mossGroup.add(mossMesh);
+    scene.add(mossGroup);
+
+    // Wobbly 3D Golden Yolk + Clear Albumen Group
+    const yolkUnit = new THREE.Group();
+    const albumenGeo = new THREE.SphereGeometry(0.82, 28, 20);
+    albumenGeo.scale(1.15, 0.32, 1.05);
+    const albumenMat = new THREE.MeshPhysicalMaterial({
+      color: 0xeef8ff,
+      transmission: 0.88,
+      opacity: 0.86,
+      transparent: true,
+      roughness: 0.08,
+      ior: 1.36,
+      thickness: 0.6,
+      clearcoat: 1.0,
+    });
+    const albumenMesh = new THREE.Mesh(albumenGeo, albumenMat);
+    albumenMesh.position.y = 0.14;
+    yolkUnit.add(albumenMesh);
+
+    const yolkSphereGeo = new THREE.SphereGeometry(0.46, 32, 24);
+    const yolkMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffb703,
+      roughness: 0.16,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.08,
+      emissive: 0x663300,
+      emissiveIntensity: 0.12,
+    });
+    const yolkMesh = new THREE.Mesh(yolkSphereGeo, yolkMat);
+    yolkMesh.position.y = 0.38;
+    yolkMesh.castShadow = true;
+    yolkUnit.add(yolkMesh);
+
+    // Cute glossy eyes on the yolk
+    function addCuteFace(parent, zOffset = 0.42, yOffset = 0.06, scale = 1) {
+      const face = new THREE.Group();
+      face.position.set(0, yOffset, zOffset);
+      face.scale.setScalar(scale);
+      const eyeWGeo = new THREE.SphereGeometry(0.085, 16, 12);
+      const eyeWMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+      const pupilGeo = new THREE.SphereGeometry(0.048, 12, 10);
+      const pupilMat = new THREE.MeshStandardMaterial({ color: 0x1e1b18, roughness: 0.1 });
+
+      [-0.14, 0.14].forEach(ex => {
+        const ew = new THREE.Mesh(eyeWGeo, eyeWMat);
+        ew.position.set(ex, 0.05, 0);
+        const ep = new THREE.Mesh(pupilGeo, pupilMat);
+        ep.position.set(ex, 0.05, 0.055);
+        face.add(ew, ep);
+      });
+
+      const smileGeo = new THREE.TorusGeometry(0.09, 0.022, 8, 16, Math.PI);
+      smileGeo.rotateZ(Math.PI);
+      const smileMat = new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.4 });
+      const smile = new THREE.Mesh(smileGeo, smileMat);
+      smile.position.set(0, -0.04, 0.02);
+      face.add(smile);
+
+      parent.add(face);
+      return face;
+    }
+    addCuteFace(yolkMesh, 0.41, 0.04, 0.85);
+    scene.add(yolkUnit);
+
+    // Liquid level inside the hollow bottom bowl (visible during/after Act 3)
+    const bowlLiquidGroup = new THREE.Group();
+    const bowlAlbumenGeo = new THREE.SphereGeometry(0.86, 28, 16, 0, Math.PI * 2, Math.PI * 0.48, Math.PI * 0.52);
+    const bowlAlbumenMesh = new THREE.Mesh(bowlAlbumenGeo, albumenMat);
+    bowlAlbumenMesh.position.y = 1.25;
+    bowlLiquidGroup.add(bowlAlbumenMesh);
+    bowlLiquidGroup.position.copy(eggAssemblyGroup.position);
+    bowlLiquidGroup.scale.set(1, 0.01, 1);
+    bowlLiquidGroup.visible = false;
+    scene.add(bowlLiquidGroup);
+
+    // Build the 8 Shards (4 bottom, 4 top) + Glowing Target Outlines
+    const shards = [];
+    const targetOutlines = [];
+    const phiMid = 0.52 * Math.PI;
+
+    for (let layer = 0; layer < 2; layer++) {
+      const isBottom = layer === 0;
+      const phiMin = isBottom ? 0.01 : phiMid;
+      const phiMax = isBottom ? phiMid : Math.PI - 0.01;
+
+      for (let q = 0; q < 4; q++) {
+        const thetaMin = q * (Math.PI / 2);
+        const thetaMax = (q + 1) * (Math.PI / 2);
+        const { geom, targetLocalPos } = createCenteredShard(phiMin, phiMax, thetaMin, thetaMax);
+
+        const mesh = new THREE.Mesh(geom, [outerShellMat, innerShellMat]);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+
+        // X-Ray overlay mesh (hidden until X-Ray tool is active)
+        const xrayOverlay = new THREE.Mesh(geom, xrayWireMat);
+        xrayOverlay.scale.setScalar(1.005);
+        xrayOverlay.visible = false;
+        mesh.add(xrayOverlay);
+
+        const targetWorldPos = targetLocalPos.clone().add(eggAssemblyGroup.position);
+
+        // Glowing target outline
+        const outlineMat = new THREE.MeshBasicMaterial({
+          color: isBottom ? 0x10b981 : 0x0ea5e9,
+          transparent: true,
+          opacity: 0.22,
+          wireframe: true,
+        });
+        const outlineMesh = new THREE.Mesh(geom, outlineMat);
+        outlineMesh.position.copy(targetWorldPos);
+        outlineMesh.visible = false;
+        scene.add(outlineMesh);
+        targetOutlines.push(outlineMesh);
+
+        // Scatter positions on table
+        const scatterAngle = (layer * 4 + q) * (Math.PI / 4) + 0.35;
+        const scatterDist = isBottom ? 2.55 : 3.25;
+        const scatterPos = new THREE.Vector3(
+          Math.cos(scatterAngle) * scatterDist + (isBottom ? 0.4 : -0.3),
+          0.32,
+          Math.sin(scatterAngle) * scatterDist + 0.3
+        );
+
+        const shardData = {
+          id: layer * 4 + q,
+          isBottom,
+          quadrant: q,
+          mesh,
+          xrayOverlay,
+          outlineMesh,
+          targetWorldPos,
+          scatterPos,
+          snapped: false,
+          userYaw: ((q + layer) % 3) * (Math.PI / 2), // slight rotation to turn if desired
+        };
+
+        mesh.userData.shard = shardData;
+        scene.add(mesh);
+        shards.push(shardData);
+      }
+    }
+
+    // =========================================================================
+    // 5. FULL HUMPTY (ACT 1 & ACT 5) + BOWTIE & TOP HAT ACCESSORIES
+    // =========================================================================
+    const humptyWholeGroup = new THREE.Group();
+    const wholeEggGeo = createEggShardGeometry(0.01, Math.PI - 0.01, 0, Math.PI * 2, 0.06);
+    const wholeEggMesh = new THREE.Mesh(wholeEggGeo, [outerShellMat, innerShellMat]);
+    wholeEggMesh.castShadow = true;
+    humptyWholeGroup.add(wholeEggMesh);
+    addCuteFace(humptyWholeGroup, 1.04, 1.45, 1.35);
+
+    // Bowtie (customizable color)
+    const bowtieGroup = new THREE.Group();
+    bowtieGroup.position.set(0, 0.85, 1.05);
+    const bowtieMat = new THREE.MeshStandardMaterial({ color: 0xe11d48, roughness: 0.4 });
+    const wingGeo = new THREE.ConeGeometry(0.22, 0.36, 4);
+    const leftWing = new THREE.Mesh(wingGeo, bowtieMat);
+    leftWing.rotation.z = -Math.PI / 2;
+    leftWing.position.x = -0.18;
+    const rightWing = new THREE.Mesh(wingGeo, bowtieMat);
+    rightWing.rotation.z = Math.PI / 2;
+    rightWing.position.x = 0.18;
+    const knot = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 12), bowtieMat);
+    bowtieGroup.add(leftWing, rightWing, knot);
+    humptyWholeGroup.add(bowtieGroup);
+
+    // Top Hat (customizable color)
+    const hatGroup = new THREE.Group();
+    hatGroup.position.set(0, 2.72, 0);
+    const hatMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.45 });
+    const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.08, 28), hatMat);
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.52, 0.65, 28), hatMat);
+    crown.position.y = 0.35;
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.51, 0.52, 0.12, 28), goldTrimMat);
+    band.position.y = 0.12;
+    hatGroup.add(brim, crown, band);
+    humptyWholeGroup.add(hatGroup);
+
+    scene.add(humptyWholeGroup);
+
+    // Also attach a cloneable accessory set to eggAssemblyGroup for Act 4 celebration!
+    const healedAccessories = new THREE.Group();
+    const healedFace = addCuteFace(healedAccessories, 1.04, 1.45, 1.35);
+    const healedBowtie = bowtieGroup.clone();
+    const healedHat = hatGroup.clone();
+    healedAccessories.add(healedBowtie, healedHat);
+    healedAccessories.visible = false;
+    eggAssemblyGroup.add(healedAccessories);
+
+    // =========================================================================
+    // 6. 3D BRICK WALL & ACT 5 SAFETY UPGRADES
+    // =========================================================================
+    const wallGroup = new THREE.Group();
+    wallGroup.position.set(0, 0, -2.5);
+    const wallMat = new THREE.MeshStandardMaterial({ map: brickTex, roughness: 0.78 });
+    const wallBase = new THREE.Mesh(new THREE.BoxGeometry(4.4, 2.8, 1.3), wallMat);
+    wallBase.position.y = 1.4;
+    wallBase.castShadow = true;
+    wallBase.receiveShadow = true;
+    wallGroup.add(wallBase);
+
+    const wallLedge = new THREE.Mesh(new THREE.BoxGeometry(4.65, 0.24, 1.55), new THREE.MeshStandardMaterial({ color: 0xd6cfc7, roughness: 0.6 }));
+    wallLedge.position.y = 2.88;
+    wallLedge.castShadow = true;
+    wallLedge.receiveShadow = true;
+    wallGroup.add(wallLedge);
+    scene.add(wallGroup);
+
+    // Act 5 Safety Upgrades
+    const safetyUpgrades = {
+      mattress: false,
+      guardrails: false,
+      seatbelt: false,
+    };
+
+    const mattressGroup = new THREE.Group();
+    mattressGroup.position.set(0, 0.22, -0.3);
+    const mattressMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(3.8, 0.44, 2.2),
+      new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.7 })
+    );
+    mattressMesh.castShadow = true;
+    mattressMesh.receiveShadow = true;
+    const mattressStripe = new THREE.Mesh(
+      new THREE.BoxGeometry(3.84, 0.1, 2.24),
+      new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.5 })
+    );
+    mattressGroup.add(mattressMesh, mattressStripe);
+    mattressGroup.visible = false;
+    scene.add(mattressGroup);
+
+    const guardrailsGroup = new THREE.Group();
+    guardrailsGroup.position.set(0, 3.0, -2.5);
+    const railMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.35, metalness: 0.4 });
+    [-1.9, 1.9].forEach(rx => {
+      const post1 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.1, 12), railMat);
+      post1.position.set(rx, 0.55, 0.55);
+      const post2 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.1, 12), railMat);
+      post2.position.set(rx, 0.55, -0.55);
+      const topBar = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1.25, 12), railMat);
+      topBar.rotation.x = Math.PI / 2;
+      topBar.position.set(rx, 1.05, 0);
+      guardrailsGroup.add(post1, post2, topBar);
+    });
+    guardrailsGroup.visible = false;
+    scene.add(guardrailsGroup);
+
+    const seatbeltGroup = new THREE.Group();
+    seatbeltGroup.position.set(0, 3.8, -2.5);
+    const beltGeo = new THREE.TorusGeometry(1.12, 0.09, 12, 32, Math.PI * 1.15);
+    beltGeo.rotateY(Math.PI / 2);
+    const beltMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5 });
+    const beltMesh = new THREE.Mesh(beltGeo, beltMat);
+    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.24, 0.14), goldTrimMat);
+    buckle.position.set(0, 0.1, 1.12);
+    seatbeltGroup.add(beltMesh, buckle);
+    seatbeltGroup.visible = false;
+    scene.add(seatbeltGroup);
+
+    // =========================================================================
+    // 7. ACT 3 SUCTION SYRINGE & ACT 4 HOSPITAL TOOLS
+    // =========================================================================
+    // 3D Glass Suction Syringe
+    const syringeGroup = new THREE.Group();
+    const barrelGeo = new THREE.CylinderGeometry(0.24, 0.24, 1.5, 24, 1, true);
+    const glassMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      transmission: 0.9,
+      opacity: 0.65,
+      transparent: true,
+      roughness: 0.06,
+      ior: 1.45,
+      thickness: 0.15,
+    });
+    const barrel = new THREE.Mesh(barrelGeo, glassMat);
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.45, 20), glassMat);
+    tip.rotation.x = Math.PI;
+    tip.position.y = -0.97;
+
+    const syringeLiquidGeo = new THREE.CylinderGeometry(0.2, 0.2, 1.2, 20);
+    const syringeLiquid = new THREE.Mesh(syringeLiquidGeo, yolkMat);
+    syringeLiquid.position.y = -0.1;
+    syringeLiquid.scale.y = 0.01;
+    syringeLiquid.visible = false;
+
+    const plungerRod = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.05, 1.2, 12),
+      new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.3 })
+    );
+    plungerRod.position.y = 0.6;
+    const plungerHead = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.28, 0.28, 0.1, 20),
+      new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 })
+    );
+    plungerHead.position.y = 1.2;
+    syringeGroup.add(barrel, tip, syringeLiquid, plungerRod, plungerHead);
+    syringeGroup.rotation.z = 0.18;
+    syringeGroup.visible = false;
+    scene.add(syringeGroup);
+
+    // Act 4 Hospital Visuals: Golden Cement Seams, UV Beam, X-Ray Frame, Royal Plasters
+    const cementGroup = new THREE.Group();
+    cementGroup.position.copy(eggAssemblyGroup.position);
+    const cementMat = new THREE.MeshStandardMaterial({
+      color: 0xfbbf24,
+      emissive: 0xf59e0b,
+      emissiveIntensity: 0.35,
+      roughness: 0.2,
+      metalness: 0.85,
+    });
+    // Equator & meridian seam rings
+    const eqRing = new THREE.Mesh(new THREE.TorusGeometry(1.045, 0.028, 10, 48), cementMat);
+    eqRing.rotation.x = Math.PI / 2;
+    eqRing.position.y = 1.38;
+    cementGroup.add(eqRing);
+    [0, Math.PI / 2].forEach(ry => {
+      const mer = new THREE.Mesh(new THREE.TorusGeometry(1.04, 0.024, 10, 48), cementMat);
+      mer.scale.set(1, 1.32, 1);
+      mer.rotation.y = ry;
+      mer.position.y = 1.38;
+      cementGroup.add(mer);
+    });
+    cementGroup.visible = false;
+    scene.add(cementGroup);
+
+    // UV Curing Lamp & Beam
+    const uvLampGroup = new THREE.Group();
+    const uvBody = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.16, 0.22, 0.9, 16),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3 })
+    );
+    const uvBeam = new THREE.Mesh(
+      new THREE.ConeGeometry(0.95, 2.2, 24, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.28, side: THREE.DoubleSide })
+    );
+    uvBeam.position.y = -1.45;
+    uvLampGroup.add(uvBody, uvBeam);
+    uvLampGroup.position.set(1.6, 2.7, 1.1);
+    uvLampGroup.rotation.z = 0.55;
+    uvLampGroup.visible = false;
+    scene.add(uvLampGroup);
+
+    // 3D X-Ray Scanner Frame
+    const xrayFrameGroup = new THREE.Group();
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.25, metalness: 0.6 });
+    const fTop = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.12, 0.14), frameMat);
+    fTop.position.y = 1.4;
+    const fBot = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.12, 0.14), frameMat);
+    fBot.position.y = -1.4;
+    const fLeft = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.9, 0.14), frameMat);
+    fLeft.position.x = -1.15;
+    const fRight = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.9, 0.14), frameMat);
+    fRight.position.x = 1.15;
+    const fScreen = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.2, 2.7),
+      new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.16, side: THREE.DoubleSide })
+    );
+    xrayFrameGroup.add(fTop, fBot, fLeft, fRight, fScreen);
+    xrayFrameGroup.position.set(0, 1.55, 1.35);
+    xrayFrameGroup.visible = false;
+    scene.add(xrayFrameGroup);
+
+    // Royal Plasters (3D curved bandages)
+    const plastersGroup = new THREE.Group();
+    plastersGroup.position.copy(eggAssemblyGroup.position);
+    const plasterMat = new THREE.MeshStandardMaterial({ color: 0xfda4af, roughness: 0.6 });
+    const plasterPadMat = new THREE.MeshStandardMaterial({ color: 0xfff1f2, roughness: 0.8 });
+    [
+      { pos: [0.68, 1.38, 0.78], rotY: 0.7, rotZ: 0.25 },
+      { pos: [-0.72, 1.65, 0.72], rotY: -0.75, rotZ: -0.3 },
+      { pos: [0.1, 0.85, 1.02], rotY: 0.1, rotZ: 0.15 },
+    ].forEach(cfg => {
+      const p = new THREE.Group();
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.22, 0.04), plasterMat);
+      const pad = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.18, 0.05), plasterPadMat);
+      p.add(strip, pad);
+      p.position.set(...cfg.pos);
+      p.rotation.set(0, cfg.rotY, cfg.rotZ);
+      plastersGroup.add(p);
+    });
+    plastersGroup.visible = false;
+    scene.add(plastersGroup);
+
+    // =========================================================================
+    // 8. SPARKLES & 3D CONFETTI PARTICLE SYSTEM
+    // =========================================================================
+    const particles = [];
+    const particleGeo = new THREE.BoxGeometry(0.11, 0.11, 0.03);
+    function spawnBurst(origin, count = 24, colors = [0xfbbf24, 0x34d399, 0x38bdf8, 0xf43f5e]) {
+      for (let i = 0; i < count; i++) {
+        const mat = new THREE.MeshBasicMaterial({ color: colors[i % colors.length] });
+        const m = new THREE.Mesh(particleGeo, mat);
+        m.position.copy(origin);
+        scene.add(m);
+        particles.push({
+          mesh: m,
+          vel: new THREE.Vector3((Math.random() - 0.5) * 4.5, 2.2 + Math.random() * 3.8, (Math.random() - 0.5) * 4.5),
+          rotVel: new THREE.Vector3(Math.random() * 6, Math.random() * 6, Math.random() * 6),
+          life: 1.8 + Math.random() * 0.9,
+        });
+      }
+    }
+
+    // =========================================================================
+    // 9. GAME STATE, CAMERA PRESETS & ACT TRANSITIONS
+    // =========================================================================
+    const state = {
+      act: 1,
+      orbitDeg: 0,
+      camBasePos: new THREE.Vector3(0, 4.2, 8.8),
+      camTarget: new THREE.Vector3(0, 1.5, 0),
+      // Act 1
+      act1Phase: 'ready', // 'ready' | 'falling' | 'fallen'
+      fallTime: 0,
+      // Act 2 & 4
+      selectedShard: null,
+      draggingShard: null,
+      // Act 3
+      syringeMode: 'empty', // 'empty' | 'filling' | 'full' | 'squirting' | 'done'
+      syringeProgress: 0,
+      // Act 4
+      hospitalStep: 0, // 0=place top shards, 1=cement, 2=uv, 3=xray, 4=plasters, 5=healed
+      xrayActive: false,
+      cementDone: false,
+      uvDone: false,
+      xrayDone: false,
+      plastersDone: false,
+      // Act 5
+      wallTestPhase: 'idle', // 'idle' | 'testing' | 'safe'
+      wallTestTime: 0,
+      // Yolk spring
+      yolkSquash: 0,
+      yolkVel: 0,
+    };
+
+    const pipTextEl = document.getElementById('pip-text');
+    const pipBoxEl = document.getElementById('nurse-pip-box');
+    const dockEl = document.getElementById('bottom-dock');
+    const actSubtitleEl = document.getElementById('act-subtitle');
+
+    function setPip(msg, isAlert = false) {
+      pipTextEl.textContent = msg;
+      pipBoxEl.classList.remove('alert');
+      if (isAlert) {
+        void pipBoxEl.offsetWidth;
+        pipBoxEl.classList.add('alert');
+      }
+    }
+
+    function setXRayMode(active) {
+      state.xrayActive = active;
+      xrayFrameGroup.visible = active;
+      shards.forEach(s => {
+        s.mesh.material = active ? [xrayShellMat, xrayShellMat] : [outerShellMat, innerShellMat];
+        s.xrayOverlay.visible = active;
+      });
+    }
+
+    function goToAct(actNum) {
+      sound.setUVHum(false);
+      setXRayMode(false);
+      state.act = actNum;
+      state.selectedShard = null;
+      state.draggingShard = null;
+
+      document.querySelectorAll('.act-btn').forEach(btn => {
+        btn.classList.toggle('active', Number(btn.dataset.act) === actNum);
+      });
+
+      // Reset visibility defaults
+      wallGroup.visible = actNum === 1 || actNum === 5;
+      humptyWholeGroup.visible = actNum === 1 || actNum === 5;
+      mossGroup.visible = actNum === 1;
+      examRing.visible = actNum >= 2 && actNum <= 4;
+      goldTrim.visible = actNum >= 2 && actNum <= 4;
+      leafGroup.visible = actNum <= 3;
+      yolkUnit.visible = actNum <= 4;
+      syringeGroup.visible = actNum === 3;
+      cementGroup.visible = actNum === 4 && state.cementDone;
+      uvLampGroup.visible = false;
+      plastersGroup.visible = actNum === 4 && state.plastersDone;
+      healedAccessories.visible = actNum === 4 && state.hospitalStep === 5;
+      mattressGroup.visible = actNum === 5 && safetyUpgrades.mattress;
+      guardrailsGroup.visible = actNum === 5 && safetyUpgrades.guardrails;
+      seatbeltGroup.visible = actNum === 5 && safetyUpgrades.seatbelt;
+
+      targetOutlines.forEach(o => (o.visible = false));
+
+      if (actNum === 1) {
+        actSubtitleEl.textContent = 'Act 1: The Great 3D Fall';
+        state.camBasePos.set(0, 4.1, 8.6);
+        state.camTarget.set(0, 2.2, -0.8);
+        state.act1Phase = 'ready';
+        humptyWholeGroup.position.set(0, 3.0, -2.5);
+        humptyWholeGroup.rotation.set(0, 0, 0);
+        shards.forEach(s => { s.mesh.visible = false; s.snapped = false; });
+        yolkUnit.visible = false;
+        bowlLiquidGroup.visible = false;
+        setPip("Welcome to the Royal Egg Hospital! Pick Humpty's bowtie and hat color, then watch him on the wall!");
+      } else if (actNum === 2) {
+        actSubtitleEl.textContent = 'Act 2: Engineer the Hollow 3D Bottom Bowl';
+        state.camBasePos.set(0, 5.2, 6.2);
+        state.camTarget.set(0, 1.0, 0.2);
+        bowlLiquidGroup.visible = false;
+        yolkUnit.position.set(-2.7, 0.08, 0.7);
+        yolkUnit.scale.setScalar(1);
+        shards.forEach(s => {
+          s.mesh.visible = true;
+          s.snapped = false;
+          s.mesh.position.copy(s.scatterPos);
+          s.mesh.rotation.set(0, s.userYaw, 0);
+          s.outlineMesh.visible = s.isBottom;
+        });
+        setPip("First, let's build the hollow bottom cup! Drag the 4 bottom shell pieces onto the glowing green ring.");
+      } else if (actNum === 3) {
+        actSubtitleEl.textContent = 'Act 3: The 3D Yolk Rescue (Suction Syringe)';
+        state.camBasePos.set(-0.6, 5.4, 6.1);
+        state.camTarget.set(-1.1, 1.0, 0.3);
+        state.syringeMode = 'empty';
+        state.syringeProgress = 0;
+        syringeLiquid.visible = false;
+        syringeGroup.position.set(-1.3, 2.5, 0.6);
+        // Bottom bowl assembled, top pieces waiting on table
+        shards.forEach(s => {
+          s.mesh.visible = true;
+          if (s.isBottom) {
+            s.snapped = true;
+            s.mesh.position.copy(s.targetWorldPos);
+            s.mesh.rotation.set(0, 0, 0);
+          } else {
+            s.snapped = false;
+            s.mesh.position.copy(s.scatterPos);
+            s.mesh.rotation.set(0, s.userYaw, 0);
+          }
+        });
+        yolkUnit.visible = true;
+        yolkUnit.position.set(-2.7, 0.08, 0.7);
+        yolkUnit.scale.setScalar(1);
+        bowlLiquidGroup.visible = false;
+        bowlLiquidGroup.scale.set(1, 0.01, 1);
+        setPip("Hold or click 'Draw Yolk!' over the green leaf to suck up Humpty's wobbly golden yolk into the 3D syringe!");
+      } else if (actNum === 4) {
+        actSubtitleEl.textContent = 'Act 4: Seal the 3D Dome & Royal Egg Hospital';
+        state.camBasePos.set(0, 3.6, 6.2);
+        state.camTarget.set(0, 1.45, 0);
+        // Bowl + yolk inside!
+        yolkUnit.visible = true;
+        yolkUnit.position.set(0, 1.0, 0);
+        yolkUnit.scale.setScalar(0.9);
+        bowlLiquidGroup.visible = true;
+        bowlLiquidGroup.scale.set(1, 1, 1);
+        shards.forEach(s => {
+          s.mesh.visible = true;
+          if (s.isBottom) {
+            s.snapped = true;
+            s.mesh.position.copy(s.targetWorldPos);
+            s.mesh.rotation.set(0, 0, 0);
+          } else {
+            s.snapped = state.hospitalStep >= 1;
+            s.mesh.position.copy(s.snapped ? s.targetWorldPos : s.scatterPos);
+            s.mesh.rotation.set(0, s.snapped ? 0 : s.userYaw, 0);
+            s.outlineMesh.visible = !s.snapped;
+          }
+        });
+        if (state.hospitalStep === 0) {
+          setPip("Now snap the 4 top dome pieces over the filled bowl to enclose Humpty!");
+        } else {
+          setPip("Use the 4 Royal Egg Hospital tools in order to heal Humpty completely!");
+        }
+      } else if (actNum === 5) {
+        actSubtitleEl.textContent = 'Act 5: Engineer a Safe 3D Wall';
+        state.camBasePos.set(3.2, 3.8, 7.6);
+        state.camTarget.set(0, 2.2, -1.5);
+        state.wallTestPhase = 'idle';
+        humptyWholeGroup.position.set(0, 3.0, -2.5);
+        humptyWholeGroup.rotation.set(0, 0, 0);
+        shards.forEach(s => (s.mesh.visible = false));
+        bowlLiquidGroup.visible = false;
+        setPip("Add safety upgrades to the 3D wall—Mattress, Guardrails, and Seatbelt—then hit 'Test the Wall!'");
+      }
+
+      renderDock();
+    }
+
+    // =========================================================================
+    // 10. DYNAMIC BOTTOM DOCK UI
+    // =========================================================================
+    function renderDock() {
+      dockEl.innerHTML = '';
+
+      if (state.act === 1) {
+        // Bowtie & Hat color pickers + Fall button
+        const bowGroup = document.createElement('div');
+        bowGroup.className = 'swatch-group';
+        bowGroup.innerHTML = `<span class="swatch-label">Bowtie:</span>`;
+        ['#e11d48', '#f59e0b', '#10b981', '#8b5cf6'].forEach(hex => {
+          const b = document.createElement('button');
+          b.className = 'swatch';
+          b.style.background = hex;
+          b.onclick = () => {
+            bowtieMat.color.set(hex);
+            healedBowtie.traverse(c => { if (c.isMesh) c.material = bowtieMat; });
+            sound.playClink(1.2);
+          };
+          bowGroup.appendChild(b);
+        });
+        dockEl.appendChild(bowGroup);
+
+        const hatGroupUI = document.createElement('div');
+        hatGroupUI.className = 'swatch-group';
+        hatGroupUI.innerHTML = `<span class="swatch-label">Hat:</span>`;
+        ['#1d4ed8', '#0f172a', '#db2777', '#059669'].forEach(hex => {
+          const b = document.createElement('button');
+          b.className = 'swatch';
+          b.style.background = hex;
+          b.onclick = () => {
+            hatMat.color.set(hex);
+            healedHat.traverse(c => { if (c.isMesh && c.geometry.type !== 'CylinderGeometry') {} });
+            sound.playClink(1.3);
+          };
+          hatGroupUI.appendChild(b);
+        });
+        dockEl.appendChild(hatGroupUI);
+
+        if (state.act1Phase === 'ready') {
+          const fallBtn = document.createElement('button');
+          fallBtn.className = 'btn-primary';
+          fallBtn.innerHTML = '🥚 Watch Humpty Fall!';
+          fallBtn.onclick = startAct1Fall;
+          dockEl.appendChild(fallBtn);
+        } else if (state.act1Phase === 'fallen') {
+          const nextBtn = document.createElement('button');
+          nextBtn.className = 'btn-primary mint';
+          nextBtn.innerHTML = '🥣 Build the Hollow Bowl! →';
+          nextBtn.onclick = () => goToAct(2);
+          dockEl.appendChild(nextBtn);
+        }
+      } else if (state.act === 2) {
+        const snappedCount = shards.filter(s => s.isBottom && s.snapped).length;
+        const pill = document.createElement('div');
+        pill.className = 'progress-pill';
+        pill.textContent = `Bottom Bowl: ${snappedCount} / 4`;
+        dockEl.appendChild(pill);
+
+        const turnL = document.createElement('button');
+        turnL.className = 'btn-secondary';
+        turnL.innerHTML = '↺ Turn Left';
+        turnL.onclick = () => rotateSelectedShard(Math.PI / 2);
+
+        const turnR = document.createElement('button');
+        turnR.className = 'btn-secondary';
+        turnR.innerHTML = 'Turn Right ↻';
+        turnR.onclick = () => rotateSelectedShard(-Math.PI / 2);
+
+        dockEl.append(turnL, turnR);
+
+        if (snappedCount === 4) {
+          const nextBtn = document.createElement('button');
+          nextBtn.className = 'btn-primary mint';
+          nextBtn.innerHTML = '💉 Go to Yolk Rescue! →';
+          nextBtn.onclick = () => goToAct(3);
+          dockEl.appendChild(nextBtn);
+        }
+      } else if (state.act === 3) {
+        if (state.syringeMode === 'empty' || state.syringeMode === 'filling') {
+          const drawBtn = document.createElement('button');
+          drawBtn.className = 'btn-primary';
+          drawBtn.innerHTML = '💉 Draw Yolk into Syringe!';
+          drawBtn.onclick = triggerSyringeDraw;
+          dockEl.appendChild(drawBtn);
+        } else if (state.syringeMode === 'full' || state.syringeMode === 'squirting') {
+          const squirtBtn = document.createElement('button');
+          squirtBtn.className = 'btn-primary sky';
+          squirtBtn.innerHTML = '🥣 Squirt Yolk into Hollow Bowl!';
+          squirtBtn.onclick = triggerSyringeSquirt;
+          dockEl.appendChild(squirtBtn);
+        } else {
+          const nextBtn = document.createElement('button');
+          nextBtn.className = 'btn-primary mint';
+          nextBtn.innerHTML = '🏥 Seal the 3D Dome! →';
+          nextBtn.onclick = () => { state.hospitalStep = 0; goToAct(4); };
+          dockEl.appendChild(nextBtn);
+        }
+      } else if (state.act === 4) {
+        const topSnapped = shards.filter(s => !s.isBottom && s.snapped).length;
+        if (topSnapped < 4) {
+          const pill = document.createElement('div');
+          pill.className = 'progress-pill';
+          pill.textContent = `Top Dome: ${topSnapped} / 4`;
+          dockEl.appendChild(pill);
+
+          const turnL = document.createElement('button');
+          turnL.className = 'btn-secondary';
+          turnL.innerHTML = '↺ Turn Left';
+          turnL.onclick = () => rotateSelectedShard(Math.PI / 2);
+
+          const turnR = document.createElement('button');
+          turnR.className = 'btn-secondary';
+          turnR.innerHTML = 'Turn Right ↻';
+          turnR.onclick = () => rotateSelectedShard(-Math.PI / 2);
+          dockEl.append(turnL, turnR);
+        } else {
+          const tools = [
+            { id: 'cement', label: '1. 🖌️ Golden Cement', done: state.cementDone, action: useCementTool },
+            { id: 'uv', label: '2. 🔦 UV Cure Lamp', done: state.uvDone, action: useUVTool },
+            { id: 'xray', label: '3. 🩻 3D X-Ray Scan', done: state.xrayDone, action: useXRayTool },
+            { id: 'plaster', label: '4. 🩹 Royal Plasters', done: state.plastersDone, action: usePlasterTool },
+          ];
+          tools.forEach(t => {
+            const b = document.createElement('button');
+            b.className = `btn-secondary ${t.done ? 'done' : ''}`;
+            b.textContent = t.done ? `${t.label} ✓` : t.label;
+            b.onclick = t.action;
+            dockEl.appendChild(b);
+          });
+
+          if (state.xrayDone) {
+            const peekBtn = document.createElement('button');
+            peekBtn.className = `btn-secondary ${state.xrayActive ? 'selected' : ''}`;
+            peekBtn.textContent = state.xrayActive ? '👁️ Normal View' : '🩻 X-Ray Peek';
+            peekBtn.onclick = () => {
+              sound.playXRayPing();
+              setXRayMode(!state.xrayActive);
+              renderDock();
+            };
+            dockEl.appendChild(peekBtn);
+          }
+
+          if (state.cementDone && state.uvDone && state.xrayDone && state.plastersDone) {
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'btn-primary mint';
+            nextBtn.innerHTML = '🧱 Build a Safe Wall! →';
+            nextBtn.onclick = () => goToAct(5);
+            dockEl.appendChild(nextBtn);
+          }
+        }
+      } else if (state.act === 5) {
+        const upg = [
+          { key: 'mattress', label: '🛏️ Feather Mattress', obj: mattressGroup },
+          { key: 'guardrails', label: '🚧 Side Guardrails', obj: guardrailsGroup },
+          { key: 'seatbelt', label: '🎗️ 3D Seatbelt', obj: seatbeltGroup },
+        ];
+        upg.forEach(u => {
+          const b = document.createElement('button');
+          b.className = `btn-secondary ${safetyUpgrades[u.key] ? 'done' : ''}`;
+          b.textContent = safetyUpgrades[u.key] ? `${u.label} ✓` : `+ ${u.label}`;
+          b.onclick = () => {
+            safetyUpgrades[u.key] = !safetyUpgrades[u.key];
+            u.obj.visible = safetyUpgrades[u.key];
+            sound.playClink(1.1);
+            if (safetyUpgrades[u.key]) spawnBurst(u.obj.position.clone().add(new THREE.Vector3(0, 0.5, 0)), 14);
+            renderDock();
+          };
+          dockEl.appendChild(b);
+        });
+
+        const testBtn = document.createElement('button');
+        testBtn.className = 'btn-primary';
+        testBtn.innerHTML = '🌬️ Test the Wall!';
+        testBtn.onclick = runWallTest;
+        dockEl.appendChild(testBtn);
+
+        if (state.wallTestPhase === 'safe') {
+          const badgeBtn = document.createElement('button');
+          badgeBtn.className = 'btn-primary mint';
+          badgeBtn.innerHTML = '🏅 View Engineer Badge!';
+          badgeBtn.onclick = () => document.getElementById('cert-modal').classList.add('open');
+          dockEl.appendChild(badgeBtn);
+        }
+      }
+    }
+
+    // =========================================================================
+    // 11. GAMEPLAY ACTIONS
+    // =========================================================================
+    function startAct1Fall() {
+      if (state.act1Phase !== 'ready') return;
+      sound.unlock();
+      state.act1Phase = 'falling';
+      state.fallTime = 0;
+      setPip("Uh oh! Humpty is wobbling on the wall... hold onto your hat!");
+      renderDock();
+    }
+
+    function rotateSelectedShard(deltaYaw) {
+      let target = state.selectedShard;
+      if (!target) {
+        // Pick first unsnapped shard in the current act's active layer
+        target = shards.find(s => !s.snapped && (state.act === 2 ? s.isBottom : !s.isBottom));
+      }
+      if (!target || target.snapped) return;
+      state.selectedShard = target;
+      target.userYaw += deltaYaw;
+      target.mesh.rotation.y = target.userYaw;
+      sound.playClink(1.15);
+    }
+
+    function triggerSyringeDraw() {
+      if (state.syringeMode !== 'empty') return;
+      state.syringeMode = 'filling';
+      state.syringeProgress = 0;
+      sound.playSuction(false);
+      setPip("Slurp! Drawing the wobbly golden yolk and clear albumen up into the 3D syringe!");
+      renderDock();
+    }
+
+    function triggerSyringeSquirt() {
+      if (state.syringeMode !== 'full') return;
+      state.syringeMode = 'squirting';
+      state.syringeProgress = 0;
+      sound.playSuction(true);
+      setPip("Squirt! Filling the hollow 3D eggshell bowl—look at the yolk bobbing safely inside!");
+      renderDock();
+    }
+
+    function useCementTool() {
+      sound.playBrush();
+      state.cementDone = true;
+      cementGroup.visible = true;
+      spawnBurst(new THREE.Vector3(0, 1.5, 0), 18, [0xfbbf24, 0xfef08a]);
+      setPip("Shimmering golden egg-cement painted along every 3D crack seam! Now cure it with the UV Lamp.");
+      renderDock();
+    }
+
+    function useUVTool() {
+      if (!state.cementDone) {
+        sound.playGentleError();
+        setPip("Let's paint the Golden Egg-Cement first before curing with the UV Lamp!", true);
+        return;
+      }
+      uvLampGroup.visible = true;
+      sound.setUVHum(true);
+      setPip("Shining the blue UV curing beam... hardening the golden cement!");
+      setTimeout(() => {
+        if (state.act !== 4) return;
+        sound.setUVHum(false);
+        uvLampGroup.visible = false;
+        state.uvDone = true;
+        spawnBurst(new THREE.Vector3(0, 1.6, 0), 22, [0x60a5fa, 0x93c5fd, 0xfef08a]);
+        sound.playClink(1.4);
+        setPip("Hardened and sparkling! Now use the 3D X-Ray Scanner to check Humpty's yolk inside.");
+        renderDock();
+      }, 1300);
+    }
+
+    function useXRayTool() {
+      sound.playXRayPing();
+      setXRayMode(true);
+      state.xrayDone = true;
+      setPip("Whoa! Look through the 3D X-Ray! Humpty's happy golden yolk is floating safely inside his shell!");
+      renderDock();
+    }
+
+    function usePlasterTool() {
+      setXRayMode(false);
+      sound.playClink(1.25);
+      state.plastersDone = true;
+      plastersGroup.visible = true;
+      healedAccessories.visible = true;
+      state.hospitalStep = 5;
+      spawnBurst(new THREE.Vector3(0, 2.2, 0), 36);
+      sound.playFanfare();
+      setPip("Hooray!! Humpty Dumpty is completely healed! Let's engineer a super-safe 3D wall next!");
+      renderDock();
+    }
+
+    function runWallTest() {
+      if (!safetyUpgrades.mattress && !safetyUpgrades.guardrails && !safetyUpgrades.seatbelt) {
+        sound.playGentleError();
+        setPip("Add at least one safety upgrade (Mattress, Guardrails, or Seatbelt) so Humpty stays safe!", true);
+        return;
+      }
+      state.wallTestPhase = 'testing';
+      state.wallTestTime = 0;
+      humptyWholeGroup.position.set(0, 3.0, -2.5);
+      humptyWholeGroup.rotation.set(0, 0, 0);
+      setPip("Here comes a gust of wind! Let's see how our 3D safety engineering protects Humpty...");
+    }
+
+    // =========================================================================
+    // 12. 3D RAYCASTING DRAG & SNAP (FORGIVING FOR A 7-YEAR-OLD)
+    // =========================================================================
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.9);
+    const dragIntersect = new THREE.Vector3();
+
+    function updatePointer(e) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    }
+
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      sound.unlock();
+      updatePointer(e);
+      raycaster.setFromCamera(pointer, camera);
+
+      if (state.act === 2 || (state.act === 4 && state.hospitalStep === 0)) {
+        const activeMeshes = shards.filter(s => !s.snapped && s.mesh.visible).map(s => s.mesh);
+        const hits = raycaster.intersectObjects(activeMeshes, false);
+        if (hits.length > 0) {
+          const shard = hits[0].object.userData.shard;
+          // Engineering check: prevent placing top dome pieces in Act 2!
+          if (state.act === 2 && !shard.isBottom) {
+            sound.playGentleError();
+            setPip("Wait! If we put the top roof on first, how will we pour the yolk inside? Build the hollow bottom cup first!", true);
+            return;
+          }
+          state.selectedShard = shard;
+          state.draggingShard = shard;
+          shard.mesh.position.y = 1.15;
+          sound.playClink(0.9);
+          return;
+        }
+      }
+
+      if (state.act === 3) {
+        if (state.syringeMode === 'empty') triggerSyringeDraw();
+        else if (state.syringeMode === 'full') triggerSyringeSquirt();
+      }
+    });
+
+    renderer.domElement.addEventListener('pointermove', (e) => {
+      if (!state.draggingShard) return;
+      updatePointer(e);
+      raycaster.setFromCamera(pointer, camera);
+      if (raycaster.ray.intersectPlane(dragPlane, dragIntersect)) {
+        state.draggingShard.mesh.position.x = THREE.MathUtils.clamp(dragIntersect.x, -4.5, 4.5);
+        state.draggingShard.mesh.position.z = THREE.MathUtils.clamp(dragIntersect.z, -4.0, 4.0);
+        state.draggingShard.mesh.position.y = 1.25;
+      }
+    });
+
+    window.addEventListener('pointerup', () => {
+      if (!state.draggingShard) return;
+      const shard = state.draggingShard;
+      state.draggingShard = null;
+
+      // Forgiving magnetic snap check
+      const distXZ = Math.hypot(
+        shard.mesh.position.x - shard.targetWorldPos.x,
+        shard.mesh.position.z - shard.targetWorldPos.z
+      );
+
+      if (distXZ < 1.35) {
+        // Snap!
+        shard.snapped = true;
+        shard.mesh.position.copy(shard.targetWorldPos);
+        shard.mesh.rotation.set(0, 0, 0);
+        shard.outlineMesh.visible = false;
+        sound.playClink(1.15 + shard.quadrant * 0.08);
+        spawnBurst(shard.targetWorldPos, 14);
+
+        if (state.act === 2) {
+          const done = shards.filter(s => s.isBottom && s.snapped).length;
+          if (done === 4) {
+            sound.playFanfare();
+            setPip("Awesome engineering! You built a real hollow 3D eggshell bowl! Ready for the Yolk Rescue?");
+          }
+          renderDock();
+        } else if (state.act === 4) {
+          const done = shards.filter(s => !s.isBottom && s.snapped).length;
+          if (done === 4) {
+            state.hospitalStep = 1;
+            sound.playFanfare();
+            setPip("Humpty's 3D dome is sealed! Now use the 4 Royal Egg Hospital tools below to heal him.");
+          }
+          renderDock();
+        }
+      } else {
+        // Return gently to table height
+        shard.mesh.position.y = 0.32;
+      }
+    });
+
+    // =========================================================================
+    // 13. UI CONTROLS (JUMP BAR, SOUND, ORBIT SLIDER, CERT MODAL)
+    // =========================================================================
+    document.getElementById('act-jump-bar').addEventListener('click', (e) => {
+      const btn = e.target.closest('.act-btn');
+      if (!btn) return;
+      goToAct(Number(btn.dataset.act));
+    });
+
+    document.getElementById('sound-toggle').addEventListener('click', (e) => {
+      sound.enabled = !sound.enabled;
+      if (!sound.enabled) sound.setUVHum(false);
+      e.target.textContent = sound.enabled ? '🔊 Sound: ON' : '🔇 Sound: OFF';
+    });
+
+    const orbitSlider = document.getElementById('orbit-slider');
+    const orbitDegLabel = document.getElementById('orbit-deg');
+    orbitSlider.addEventListener('input', (e) => {
+      state.orbitDeg = Number(e.target.value);
+      orbitDegLabel.textContent = `${state.orbitDeg}°`;
+    });
+
+    document.getElementById('btn-print-cert').addEventListener('click', () => window.print());
+    document.getElementById('btn-close-cert').addEventListener('click', () => {
+      document.getElementById('cert-modal').classList.remove('open');
+      goToAct(1);
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // =========================================================================
+    // 14. MAIN ANIMATION LOOP
+    // =========================================================================
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const elapsed = clock.elapsedTime;
+
+      // Smooth Camera Orbit + Preset Glide
+      const rad = THREE.MathUtils.degToRad(state.orbitDeg);
+      const offset = state.camBasePos.clone().sub(state.camTarget);
+      offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), rad);
+      const desiredCamPos = state.camTarget.clone().add(offset);
+      camera.position.lerp(desiredCamPos, 0.08);
+      camera.lookAt(state.camTarget);
+
+      // Wobbly Yolk Spring Animation
+      if (yolkUnit.visible) {
+        const wobble = Math.sin(elapsed * 4.5) * 0.045;
+        yolkMesh.scale.set(1 + wobble, 1 - wobble * 1.1, 1 + wobble);
+        yolkMesh.rotation.y = Math.sin(elapsed * 1.8) * 0.18;
+      }
+
+      // Act 1 Fall Animation
+      if (state.act === 1 && state.act1Phase === 'falling') {
+        state.fallTime += dt;
+        const t = state.fallTime;
+        if (t < 1.1) {
+          // Wobble on wall
+          humptyWholeGroup.rotation.z = Math.sin(t * 14) * 0.22;
+        } else if (t < 2.1) {
+          // Tumble onto moss cushion
+          const ft = (t - 1.1) / 1.0;
+          humptyWholeGroup.position.y = THREE.MathUtils.lerp(3.0, 0.2, ft * ft);
+          humptyWholeGroup.position.z = THREE.MathUtils.lerp(-2.5, 1.8, ft);
+          humptyWholeGroup.rotation.x = ft * Math.PI * 0.45;
+        } else {
+          // Split cleanly into 8 shards + yolk puddle!
+          state.act1Phase = 'fallen';
+          humptyWholeGroup.visible = false;
+          sound.playSplit();
+          spawnBurst(new THREE.Vector3(0, 0.8, 1.8), 26);
+
+          shards.forEach(s => {
+            s.mesh.visible = true;
+            s.mesh.position.copy(s.scatterPos);
+            s.mesh.rotation.set(0, s.userYaw, 0);
+          });
+          yolkUnit.visible = true;
+          yolkUnit.position.set(-2.7, 0.08, 0.7);
+          setPip("Oh dear! Humpty split into 8 pieces! If we glue the whole 3D shell shut first, how will we get Humpty's yolk back inside?");
+          renderDock();
+        }
+      }
+
+      // Act 3 Syringe Animation
+      if (state.act === 3) {
+        if (state.syringeMode === 'filling') {
+          state.syringeProgress = Math.min(1, state.syringeProgress + dt * 0.9);
+          const p = state.syringeProgress;
+          syringeGroup.position.lerp(new THREE.Vector3(-2.7, 1.75, 0.7), 0.12);
+          syringeLiquid.visible = true;
+          syringeLiquid.scale.y = Math.max(0.02, p);
+          syringeLiquid.position.y = -0.65 + p * 0.55;
+          plungerRod.position.y = 0.2 + p * 0.75;
+          plungerHead.position.y = 0.8 + p * 0.75;
+          yolkUnit.scale.setScalar(Math.max(0.05, 1 - p));
+          if (p >= 1) {
+            yolkUnit.visible = false;
+            state.syringeMode = 'full';
+            sound.playClink(1.3);
+            setPip("Got it! Now click 'Squirt Yolk into Hollow Bowl!' to pour Humpty safely into the cup!");
+            renderDock();
+          }
+        } else if (state.syringeMode === 'squirting') {
+          state.syringeProgress = Math.min(1, state.syringeProgress + dt * 0.9);
+          const p = state.syringeProgress;
+          syringeGroup.position.lerp(new THREE.Vector3(0, 2.55, 0), 0.12);
+          const rem = Math.max(0.02, 1 - p);
+          syringeLiquid.scale.y = rem;
+          syringeLiquid.position.y = -0.65 + rem * 0.55;
+          plungerRod.position.y = 0.2 + rem * 0.75;
+          plungerHead.position.y = 0.8 + rem * 0.75;
+
+          bowlLiquidGroup.visible = true;
+          bowlLiquidGroup.scale.set(1, Math.max(0.05, p), 1);
+          yolkUnit.visible = true;
+          yolkUnit.position.set(0, 1.0, 0);
+          yolkUnit.scale.setScalar(p * 0.9);
+
+          if (p >= 1) {
+            syringeLiquid.visible = false;
+            state.syringeMode = 'done';
+            sound.playFanfare();
+            spawnBurst(new THREE.Vector3(0, 1.4, 0), 22);
+            setPip("Splendid! The hollow 3D bowl holds Humpty's yolk safely! Ready to seal the top dome?");
+            renderDock();
+          }
+        }
+      }
+
+      // Act 4 UV Lamp gentle sweep
+      if (state.act === 4 && uvLampGroup.visible) {
+        uvLampGroup.position.x = Math.sin(elapsed * 5) * 1.4;
+      }
+
+      // Act 5 Wall Test Animation
+      if (state.act === 5 && state.wallTestPhase === 'testing') {
+        state.wallTestTime += dt;
+        const t = state.wallTestTime;
+        if (safetyUpgrades.seatbelt) {
+          humptyWholeGroup.rotation.z = Math.sin(t * 8) * 0.08;
+          if (t > 1.8) {
+            humptyWholeGroup.rotation.z = 0;
+            state.wallTestPhase = 'safe';
+            sound.playFanfare();
+            spawnBurst(new THREE.Vector3(0, 4.2, -2.5), 40);
+            setPip("The 3D Seatbelt held Humpty snug and safe in the breeze! Hooray!");
+            renderDock();
+          }
+        } else if (safetyUpgrades.guardrails && !safetyUpgrades.mattress) {
+          humptyWholeGroup.position.x = Math.sin(t * 5) * 0.65;
+          humptyWholeGroup.rotation.z = Math.sin(t * 5) * 0.14;
+          if (t > 2.0) {
+            humptyWholeGroup.position.x = 0;
+            humptyWholeGroup.rotation.z = 0;
+            state.wallTestPhase = 'safe';
+            sound.playFanfare();
+            spawnBurst(new THREE.Vector3(0, 4.2, -2.5), 40);
+            setPip("The Brick Side Guardrails kept Humpty safely on top of the wall!");
+            renderDock();
+          }
+        } else {
+          // Bounces safely onto the Feather Mattress!
+          if (t < 1.2) {
+            const ft = t / 1.2;
+            humptyWholeGroup.position.y = THREE.MathUtils.lerp(3.0, 0.45, ft * ft);
+            humptyWholeGroup.position.z = THREE.MathUtils.lerp(-2.5, -0.3, ft);
+          } else if (t < 2.0) {
+            const bt = (t - 1.2) / 0.8;
+            if (bt < 0.08) sound.playBounce();
+            humptyWholeGroup.position.y = 0.45 + Math.sin(bt * Math.PI) * 0.85;
+          } else {
+            humptyWholeGroup.position.set(0, 0.45, -0.3);
+            state.wallTestPhase = 'safe';
+            sound.playFanfare();
+            spawnBurst(new THREE.Vector3(0, 1.5, -0.3), 45);
+            setPip("Boing! Safe and sound on the Bouncy Feather Mattress—not a single crack!");
+            renderDock();
+          }
+        }
+      }
+
+      // Update Particles (Sparkles & Confetti)
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life -= dt;
+        p.vel.y -= 9.5 * dt;
+        p.mesh.position.addScaledVector(p.vel, dt);
+        p.mesh.rotation.x += p.rotVel.x * dt;
+        p.mesh.rotation.y += p.rotVel.y * dt;
+        if (p.life <= 0) {
+          scene.remove(p.mesh);
+          p.mesh.material.dispose();
+          particles.splice(i, 1);
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    // Boot directly into Act 1
+    goToAct(1);
+    animate();
+  </script>
+</body>
+</html>
